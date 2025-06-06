@@ -1,9 +1,19 @@
 #include <stdio.h>
 #include <string.h>
 #include "./huf.h"
-#define bool int
-#define true 1
-#define false 0
+
+
+
+/*=============================================================
+*
+UNIFAL = Universidade Federal de Alfenas .
+*
+BACHARELADO EM CIENCIA DA COMPUTACAO.
+* Trabalho . . : Decodificador do formato PGH
+* Professor . : Luiz Eduardo da Silva
+* Aluno . . . . . : Felipe Araújo Correia
+* Data . . . . . . : 09/06/2025
+*=============================================================*/
 
 
 int achaPixel(int root, char byte){
@@ -22,7 +32,6 @@ void ler_histograma(FILE *file, int ml, int *hist){
         valor = 0;
         fread(byte, 1,sizeof(byte), file);
         for (int j = 0; j < 4; j++){
-        
             valor |= byte[j] << j * 8;
         }
         hist[i] = valor;
@@ -32,13 +41,11 @@ void ler_histograma(FILE *file, int ml, int *hist){
 
 void ler_cores(FILE *file, int *ml){
     fscanf(file, "%d ", ml);
-    printf("%d \n", *ml);
 }
 
 void ler_cabecalho(char *line,FILE *file){
 
     fgets(line, 80, file);
-    printf("%s", line);
 
     fgets(line, 80, file);
     while (strchr(line, '#')){
@@ -47,13 +54,13 @@ void ler_cabecalho(char *line,FILE *file){
 
 }
 
-void ler_tamanho(char *line, FILE *file, int *m, int*n){
+void ler_tamanho(char *line, int *m, int*n){
     sscanf(line, "%d %d", m, n);
-    printf("%d %d\n", *m, *n);
 }
 
 
-int achar_tamanho_arquivo(FILE *file){
+int achar_tamanho_arquivo(char *filename){
+    FILE *file = fopen(filename, "rb");
     fseek(file, 0L, SEEK_END);
     int fim = ftell(file);
     fclose(file);
@@ -76,9 +83,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    int fim = achar_tamanho_arquivo(file);
+    int fimDoArquivo = achar_tamanho_arquivo(filename);
 
-    file = fopen(filename, "rb");
 
 
     char *ponto = strrchr(filename, '.');
@@ -92,7 +98,7 @@ int main(int argc, char* argv[]) {
     
     ler_cabecalho(line, file);
 
-    ler_tamanho(line, file, &nl,&nc);
+    ler_tamanho(line,&nl,&nc);
     
     ler_cores(file, &ml);
     
@@ -100,20 +106,12 @@ int main(int argc, char* argv[]) {
 
     ler_histograma(file,ml, hist);
 
-   
-
-    int soma = 0;
-    for(int i =0; i<=ml; i++){
-        soma = soma + hist[i];
-    }
-
-
     int atual = ftell(file);
     
-    int tamanho = fim - atual;
-    unsigned char huff[tamanho];
+    int tamanhoRestante = fimDoArquivo - atual;
+    unsigned char huff[tamanhoRestante];
 
-    fread(huff, tamanho,sizeof(huff), file);
+    fread(huff, tamanhoRestante,sizeof(huff), file);
 
     int raizHuff = buildTree(hist, ml);
     unsigned char byte;
@@ -121,7 +119,6 @@ int main(int argc, char* argv[]) {
    
 
     int percorreHuff = raizHuff;
-    int m = 0;
     int n = 0;
     int conta = 0;
 
@@ -131,7 +128,7 @@ int main(int argc, char* argv[]) {
     fprintf(img, "%d %d \n", nl, nc);
     fprintf(img, "%d \n", ml);
 
-    while(conta < tamanho){
+    while(conta < tamanhoRestante){
         for(int j = 7; j >= 0; j--){
             byte = (huff[conta] >> j) & 1;
             percorreHuff = achaPixel(percorreHuff, byte);
@@ -143,7 +140,6 @@ int main(int argc, char* argv[]) {
             if(n == nc){
                 fprintf(img,"\n");
                 n = 0;
-                m++;
             }
             
                         
